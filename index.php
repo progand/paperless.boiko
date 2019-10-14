@@ -51,6 +51,7 @@ function get_json($url){
 	$ch = curl_init($url);
 
 	// установка URL и других необходимых параметров
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_COOKIE, 'sessionId=' . $SESSION_ID);
 	// curl_setopt($ch, CURLOPT_VERBOSE, true);
 
@@ -61,13 +62,15 @@ function get_json($url){
 	  var_dump($info);
 	  return false;
 	}
-
 	// завершение сеанса и освобождение ресурсов
 	curl_close($ch);
+
+	return $result;
 }
 
 function post_file($url){
 	// https://ryansechrest.com/2012/07/send-and-receive-binary-files-using-php-and-curl/
+	global $SESSION_ID;
 	$header = array('Content-Type: multipart/form-data');
 	$fields = array('filename' => '@' . realpath('exampledoc.pdf'));
 	$sessionId = $SESSION_ID;
@@ -79,6 +82,7 @@ function post_file($url){
 	curl_setopt($resource, CURLOPT_POST, 1);
 	curl_setopt($resource, CURLOPT_POSTFIELDS, $fields);
 	curl_setopt($resource, CURLOPT_COOKIE, 'sessionId=' . $sessionId);
+	// curl_setopt($resource, CURLOPT_VERBOSE, true);
 	$result = json_decode(curl_exec($resource));
 	if (!$result) {
 	  $info = curl_getinfo($resource);
@@ -86,8 +90,13 @@ function post_file($url){
 	  return false;
 	}
 	curl_close($resource);
+
+	return $result;
 }
 
+/*
+	Sign in with login and password
+*/
 function sign_in($login, $password){
 	$result = post_json('https://paperless.com.ua/api/login', array(
 	    'login' => $login,
@@ -97,26 +106,58 @@ function sign_in($login, $password){
 	echo "Success\n";
 
 	var_dump($result);
-}
-
-function check_session(){
-	$user = get_json('https://paperless.com.ua/api/login');
-	var_dump($user);
-	if($user['sessionId']){
-		echo 'Session id OK';
-	} else {
-		echo 'Session id expired!';
+	if($result->sessionId){
+		$SESSION_ID = $result->sessionId;
 	}
 }
 
+/*
+	Check whether sessionId is valid
+*/
+function check_session(){
+	$user = get_json('https://paperless.com.ua/api/login');
+	// var_dump($user);
+	if($user->sessionId){
+		echo 'Session id OK\n';
+		return true;
+	} else {
+		echo 'Session id expired!\n';
+		return false;
+	}
+}
+
+/*
+	Upload pdf document to paperless, returns info about document.
+*/
 function upload_file(){
 	return post_file('https://paperless.com.ua/upload');
 }
 
 
 // sign_in($LOGIN, $PASSWORD);
-// upload_file();
-check_session();
+// check_session();
+upload_file();
 // echo "hello\n";
+
+function main(){
+	global $LOGIN, $PASSWORD;
+	echo "Starting...\n";
+	// check session and login if sessionId expired
+	if(!check_session()){
+		echo "Signing in with login and password...\n";
+		sign_in($LOGIN, $PASSWORD);
+	}
+	// upload PDF file
+	echo "Starting file upload...\n";
+	$doc = upload_file();
+	if (!$doc) {
+		echo "File upload failed!!!\n";
+		return;
+	}
+
+	echo "Finished...\n";
+}
+
+main();
  
 ?>
