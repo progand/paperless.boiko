@@ -1,7 +1,7 @@
 <?php
-$LOGIN = 'epolis@salamandra.ua';
-$PASSWORD = 'hgZeLbx72cXHdFJ';
-$SESSION_ID = '1112vho79tu84fkgobpcc1vjuk46orbt395tgum49u109f6e2017';
+$LOGIN = 'xxx';
+$PASSWORD = 'xxx';
+$SESSION_ID = 'xxx';
 /*
     Prerequirities:
     	https://stackoverflow.com/questions/6382539/call-to-undefined-function-curl-init
